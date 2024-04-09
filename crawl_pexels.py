@@ -55,12 +55,14 @@ class PexelsCrawler:
         response = scraper.get(self.index_page_url, headers=self.index_headers)
         print(response.text)
         response_json = json.loads(response.text)
+
         initial_data = response_json["pageProps"]["initialData"]
         all_videos = initial_data["data"]
         for video in all_videos:
-            download_url = video["attributes"]["video"]["download"]
-            print(f"download_url: {download_url}")
-            self.download_video(download_url)
+            if video["width"] > video["height"]:
+                self.select_resolution_for_download(video)
+            else:
+                self.select_resolution_for_download(video, resolution="720x1280")
 
         next_seed = initial_data["pagination"]["cursor"]
         more_data = initial_data["pagination"]["more_data"]
@@ -74,11 +76,10 @@ class PexelsCrawler:
 
         all_videos = response_json["data"]
         for video in all_videos:
-            # download_url = video["attributes"]["video"]["download"]
-            # print(f"download_url: {download_url}")
-            # self.download_video(download_url)
-
-            self.select_resolution_for_download(video)
+            if video["width"] > video["height"]:
+                self.select_resolution_for_download(video)
+            else:
+                self.select_resolution_for_download(video, resolution="720x1280")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
@@ -92,11 +93,10 @@ class PexelsCrawler:
 
         all_videos = response_json["data"]
         for video in all_videos:
-            # download_url = video["attributes"]["video"]["download"]
-            # print(f"download_url: {download_url}")
-            # self.download_video(download_url)
-
-            self.select_resolution_for_download(video)
+            if int(video["attributes"]["width"]) > int(video["attributes"]["height"]):
+                self.select_resolution_for_download(video)
+            else:
+                self.select_resolution_for_download(video, resolution="720x1280")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
@@ -105,40 +105,49 @@ class PexelsCrawler:
 
     def select_resolution_for_download(self, video_json, resolution="1280x720"):
         """
-        resolution list(width x height): [426x240, 640x360, 960x540, 1280x720, 1920x1080, 2560x1440, 3840x2160]
+        default resolution list(width x height): [426x240, 640x360, 960x540, 1280x720, 1920x1080, 2560x1440, 3840x2160]
         """
-        if resolution in ["3840x2160", "2560x1440"]:
+        width, height = resolution.split("x")
+        if (int(width) >= 2560 and int(height) >= 1440) or (int(width) >= 1440 and int(height) >= 2560):
             quality = "uhd"
-        elif resolution in ["1920x1080", "1280x720"]:
+        elif (int(width) >= 1280 and int(height) >= 720) or (int(width) >= 720 and int(height) >= 1280):
             quality = "hd"
         else:
             quality = "sd"
+        resolution = resolution.replace('x', '_')
         video_id = video_json["id"]
-        default_download_url = video_json["attributes"]["video"]["src"]
-        fps = re.findall("https://videos.pexels.com/video-files/.*?/.*?_(\d{1,2}0)fps.mp4", default_download_url)[0]
-        hd_download_url = f"https://videos.pexels.com/video-files/{video_id}/{video_id}-{quality}_{resolution.replace('x', '_')}_{fps}fps.mp4"
-        print(f"download_url: {hd_download_url}")
-        self.download_video(video_id, hd_download_url)
-
-    def download_video(self, video_id, download_url):
         output_path = f"{self.output_dir}/{video_id}.mp4"
         if not os.path.exists(output_path):
-            response = scraper.get(download_url, stream=True, headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.46"})
-            if response.status_code == 200:
-                with open(output_path, 'wb') as file:
-                    for chunk in response.iter_content(chunk_size=1024):
-                        if chunk:
-                            file.write(chunk)
-                print(f"Video downloaded successfully: {video_id}")
-                self.update_downloaded_video_count()
-                time.sleep(0.1)
-            else:
-                print(f"Failed to download video: {download_url}, {response.text}")
-                # time.sleep(100)
-                # self.download_video(download_url)
+            default_download_url = video_json["attributes"]["video"]["src"]
+            if default_download_url:
+                print(f'video_json["attributes"]: {video_json["attributes"]}')
+                try:
+                    fps = re.findall("https://videos.pexels.com/video-files/.*?/.*?0_(\d{1,3})fps.mp4", default_download_url)[0]
+                    selected_resolution_download_url = f"https://videos.pexels.com/video-files/{video_id}/{video_id}-{quality}_{resolution}_{fps}fps.mp4"
+                except Exception as e:
+                    print(f"select resolution for download error: {str(e)}")
+                    selected_resolution_download_url = default_download_url
+                print(f"download_url: {selected_resolution_download_url}")
+                self.download_video(video_id, selected_resolution_download_url, output_path)
         else:
             print(f"Video exist: {video_id}")
+        print("-" * 100)
+
+    def download_video(self, video_id, download_url, output_path):
+        response = scraper.get(download_url, stream=True, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.46"})
+        if response.status_code == 200:
+            with open(output_path, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        file.write(chunk)
+            print(f"Video downloaded successfully: {video_id}")
+            self.update_downloaded_video_count()
+            time.sleep(0.1)
+        else:
+            print(f"Failed to download video: {download_url}, {response.text}")
+            # time.sleep(100)
+            # self.download_video(download_url, download_url, output_path)
 
     def start_crawl(self):
         seed, more_data = self.crawl_index_page()
@@ -157,4 +166,3 @@ if __name__ == '__main__':
     pc = PexelsCrawler("G:/Pexels")
     # pc.start_crawl()
     pc.start_crawl_recent("2024-03-29T19%3A00%3A31.784Z")
-
