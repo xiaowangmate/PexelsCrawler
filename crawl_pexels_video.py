@@ -94,7 +94,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video exists on the local machine: {video_id}\n{'-'*100}")
+                print(f"Video downloaded: {video_id}\n{'-'*100}")
 
         next_seed = initial_data["pagination"]["cursor"]
         more_data = initial_data["pagination"]["more_data"]
@@ -115,7 +115,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video exists on the local machine: {video_id}\n{'-'*100}")
+                print(f"Video downloaded: {video_id}\n{'-'*100}")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
@@ -136,7 +136,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video exists on the local machine: {video_id}\n{'-'*100}")
+                print(f"Video downloaded: {video_id}\n{'-'*100}")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
@@ -162,7 +162,7 @@ class PexelsCrawler:
             print(f"default_download_url: {default_download_url}")
             if default_download_url:
                 print(f'video_json["attributes"]: {video_json["attributes"]}')
-                fps = re.findall("https://videos.pexels.com/video-files/.*?/.*?0_(\d{1,3})fps.mp4", default_download_url)[0]
+                fps = re.findall("https://videos.pexels.com/video-files/.*?/.*?_(\d{1,3})fps.mp4", default_download_url)[0]
                 selected_resolution_download_url = f"https://videos.pexels.com/video-files/{video_id}/{video_id}-{quality}_{resolution}_{fps}fps.mp4"
                 if self.judge_download_url_exist(selected_resolution_download_url,
                                                  video_json["attributes"]["video"]["video_files"]):
