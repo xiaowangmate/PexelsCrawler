@@ -94,7 +94,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video downloaded: {video_id}\n{'-'*100}")
+                print(f"Video already downloaded: {video_id}\n{'-'*100}")
 
         next_seed = initial_data["pagination"]["cursor"]
         more_data = initial_data["pagination"]["more_data"]
@@ -115,7 +115,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video downloaded: {video_id}\n{'-'*100}")
+                print(f"Video already downloaded: {video_id}\n{'-'*100}")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
@@ -136,7 +136,7 @@ class PexelsCrawler:
                 else:
                     self.select_resolution_for_download(video, resolution="720x1280")
             else:
-                print(f"Video downloaded: {video_id}\n{'-'*100}")
+                print(f"Video already downloaded: {video_id}\n{'-'*100}")
 
         next_seed = response_json["pagination"]["cursor"]
         more_data = response_json["pagination"]["more_data"]
