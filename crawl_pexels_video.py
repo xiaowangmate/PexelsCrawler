@@ -68,10 +68,12 @@ class PexelsCrawler:
         self.index_page_url = "https://www.pexels.com/_next/data/HrcChhFmHNOvLJzHC6L0N/zh-CN/home/videos.json"
         self.output_dir = output_dir
         self.downloaded_video_count = self.get_downloaded_video_count()
+        self.seed_record = "seed.txt"
 
     def get_downloaded_video_count(self):
-        downloaded_video_count = len(
-            [f for f in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, f))])
+        # downloaded_video_count = len(
+        #     [f for f in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, f))])
+        downloaded_video_count = len(os.listdir(self.output_dir))
         print(f"downloaded video count: {downloaded_video_count}")
         return downloaded_video_count
 
@@ -206,17 +208,27 @@ class PexelsCrawler:
     def start_crawl(self):
         seed, more_data = self.crawl_index_page()
         while more_data:
+            self.record_last_seed(seed)
             seed, more_data = self.crawl_all(seed)
             print(f"seed: {seed}, more data: {more_data}")
 
     def start_crawl_recent(self, seed):
         more_data = True
         while more_data:
+            self.record_last_seed(seed)
             seed, more_data = self.crawl_recent(seed)
             print(f"seed: {seed}, more data: {more_data}")
+
+    def read_last_seed(self):
+        with open(self.seed_record, mode="r", encoding="utf-8") as r:
+            seed = r.read()
+            return seed
+
+    def record_last_seed(self, seed):
+        with open(self.seed_record, mode="w", encoding="utf-8") as w:
+            w.write(seed)
 
 
 if __name__ == '__main__':
     pc = PexelsCrawler("G:/Pexels")
-    # pc.start_crawl()
-    pc.start_crawl_recent("2024-03-29T19%3A00%3A31.784Z")
+    pc.start_crawl_recent(pc.read_last_seed())
